@@ -17,17 +17,17 @@
 
   /* Responsive app layout */
   .app { display:flex; gap: var(--gap); align-items:flex-start; flex-wrap: wrap; }
-  .panel { background: var(--panel-bg); border:2px solid var(--border); border-radius:12px; padding: 12px;}
+  .panel { background: var(--panel-bg); border:2px solid var(--border); border-radius:12px; padding: 16px;}
   .controls { flex: 1 1 340px; min-width: 320px; max-width: 520px; }
   .viz { flex: 2 1 420px; min-width: 320px; }
 
   .grid { display:grid; grid-template-columns: 170px 1fr; gap: 10px 12px; align-items:center; }
-  label { font-size: 14px; color:#222; }
+  label { font-size: 14px; color:#222; margin: 10px;}
   input, select { font-size: 16px; padding: 10px 10px; border:1px solid #bbb; border-radius:10px; width: 100%; box-sizing: border-box; }
-  input[type="number"] { max-width: 220px; }
+  input[type="number"] { max-width: 250px; }
 
   .buttons { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-  button { padding: 12px 14px; font-size: 16px; border-radius:12px; border:2px solid #95A0A3; background:#DDECF0; cursor:pointer; }
+  button { padding: 12px 14px; margin: 10px; font-size: 16px; border-radius:12px; border:2px solid #95A0A3; background:#DDECF0; cursor:pointer; }
   button:hover { background:#C3DCE3; }
 
   .hint { font-size: 13px; color:#5A6366; margin-top: 8px; }
@@ -73,11 +73,13 @@
       </div>
       
       <div class="row">
-        <label>Voters</label><input id="voters" type="number" value="500" min="1" max="10000" />
+        <label>Voters</label>
+        <input id="voters" type="number" value="500" min="1" max="10000" />
       </div>
       
       <div class="row">
-        <label>Candidates</label><input id="candidates" type="number" value="5" min="1" max="200" />
+        <label>Candidates</label>
+        <input id="candidates" type="number" value="5" min="1" max="200" />
       </div>
 
       <div class="row">
@@ -86,11 +88,13 @@
       </div>
       
       <div class="row">
-        <label>Threshold</label><input id="mincand" type="number" step="0.01" value="0.3" />
+        <label>Threshold</label>
+        <input id="mincand" type="number" step="0.01" value="0.3" />
       </div>
 
       <div class="row">
-        <label>Noise (Sigma)</label><input id="noise" type="number" step="0.001" value="0.0" />
+        <label>Noise (Sigma)</label>
+        <input id="noise" type="number" step="0.001" value="0.0" />
       </div>
 
       <div class="row">
@@ -100,9 +104,6 @@
       
       <div class="row">
         <button id="runBtn">Run</button>
-      </div>
-
-      <div class="row">
         <button id="downloadCsvBtn">Download CSV</button>
       </div>
 
