@@ -916,13 +916,52 @@ function draw2D(result) {
   const dim = result.cfg.d;
   if (dim < 2) { ctx.fillStyle='#000'; ctx.fillText('2D view requires dim=2', 20,20); return; }
 
-  ctx.fillStyle = 'rgba(158,197,255,0.10)'; // same vibe as 3D
-  ctx.fillRect(boxL, boxT, boxR - boxL, boxB - boxT);
-
   // map [-1,1] to margin..w-margin
   const margin = 18;
-  function mapX(x){ return margin + ((x+1)/2) * (w - 2*margin); }
-  function mapY(y){ return margin + ((1 - (y+1)/2)) * (h - 2*margin); } // invert Y
+  const boxL = margin, boxT = margin, boxR = w - margin, boxB = h - margin;
+  
+  function mapX(x){ return boxL + ((x+1)/2) * (boxR - boxL); }
+  function mapY(y){ return boxT + ((1 - (y+1)/2)) * (boxB - boxT); } // invert Y
+
+    // --- XY plane look (background + axis lines) ---
+  // Light plane fill (matches 3D vibe)
+  ctx.fillStyle = 'rgba(158,197,255,0.10)';
+  ctx.fillRect(boxL, boxT, boxR - boxL, boxB - boxT);
+
+  // Border
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(boxL, boxT, boxR - boxL, boxB - boxT);
+
+  // Light grid
+  const ticks = [-1, -0.5, 0, 0.5, 1];
+  ctx.strokeStyle = '#d9e6ff';
+  ctx.lineWidth = 1;
+  for (const t of ticks) {
+    const px = mapX(t);
+    const py = mapY(t);
+
+    ctx.beginPath(); ctx.moveTo(px, boxT); ctx.lineTo(px, boxB); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(boxL, py); ctx.lineTo(boxR, py); ctx.stroke();
+  }
+
+  // Bold axes at x=0 and y=0
+  const x0 = mapX(0);
+  const y0 = mapY(0);
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 2;
+
+  ctx.beginPath(); ctx.moveTo(x0, boxT); ctx.lineTo(x0, boxB); ctx.stroke(); // y axis
+  ctx.beginPath(); ctx.moveTo(boxL, y0); ctx.lineTo(boxR, y0); ctx.stroke(); // x axis
+
+  // Axis labels
+  ctx.fillStyle = '#222';
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'top';
+  ctx.fillText('x', boxR, y0 + 6);
+  ctx.textAlign = 'left';
+  ctx.fillText('y', x0 + 8, boxT);
 
   const K = result.candidates.length;
   const colors = [];
