@@ -934,10 +934,10 @@ function draw2D(result) {
   ctx.strokeRect(boxL, boxT, boxR - boxL, boxB - boxT);
 
   // Light grid
-  const ticks = [-1, -0.5, 0, 0.5, 1];
+  const gridTicks = [-1, -0.5, 0, 0.5, 1];
   ctx.strokeStyle = '#d9e6ff';
   ctx.lineWidth = 1;
-  for (const t of ticks) {
+  for (const t of gridTicks) {
     const px = mapX(t);
     const py = mapY(t);
 
