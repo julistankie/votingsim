@@ -34,7 +34,7 @@
   pre { background:#111; color:#eee; padding:10px; border-radius:10px; overflow:auto; max-height:180px; font-size: 13px; }
 
   /* 2D canvas container */
-  #canvasWrap { border:1px solid #ccc; border-radius:12px; width:100%; height: min(60vh, 420px); overflow:hidden; background:#fff; }
+  #canvasWrap { aspect-ratio: 4 / 3; border:1px solid #ccc; border-radius:12px; width:100%; height: min(60vh, 420px); overflow:hidden; background:#fff; }
   canvas { width:100%; height:100%; display:block; }
 
   /* 3D container */
@@ -427,6 +427,20 @@ function makeCsvForRun(result) {
 const qs = (id)=>document.getElementById(id);
 const canvas = qs('vis');
 const ctx = canvas.getContext('2d');
+function resize2DCanvas() {
+  const wrap = document.getElementById('canvasWrap');
+  const cssW = Math.max(1, wrap.clientWidth);
+  const cssH = Math.max(1, wrap.clientHeight);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width  = Math.floor(cssW * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+
+  // Draw in CSS pixel coordinates.
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize2DCanvas);
+
 
 // --- 3D (Three.js) state ---
 // Interactive view for dim=3: drag to rotate, pinch/scroll to zoom.
@@ -593,7 +607,7 @@ function ensure3D() {
 
   g3d.candPts = new THREE.Points(
     new THREE.BufferGeometry(),
-    new THREE.PointsMaterial({ size: 0.09, sizeAttenuation: true, vertexColors: true })
+    new THREE.PointsMaterial({ size: 0.22, sizeAttenuation: true, vertexColors: true })
   );
   g3d.scene.add(g3d.candPts);
 
@@ -651,6 +665,40 @@ function show3D(show) {
 window.addEventListener('resize', () => {
   resize3D();
 });
+
+function makeLabelSprite(text) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  const fontSize = 48;
+  ctx.font = fontSize + 'px Arial';
+
+  const padding = 16;
+  const textWidth = ctx.measureText(text).width;
+
+  canvas.width = textWidth + padding * 2;
+  canvas.height = fontSize + padding * 2;
+
+  // background
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // text
+  ctx.fillStyle = '#111';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = fontSize + 'px Arial';
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const sprite = new THREE.Sprite(material);
+
+  // world-size scaling (tuned for [-1,1] cube)
+  sprite.scale.set(0.6, 0.25, 1);
+
+  return sprite;
+}
 
 function set3DData(result) {
   ensure3D();
@@ -736,33 +784,61 @@ function set3DData(result) {
   g3d.candPts.geometry.dispose();
   g3d.candPts.geometry = cg;
 
-  g3d.controls.target.set(0,0,0);
-  g3d.controls.update();
-}
+  // ----- Candidate labels (C0, C1, ...) -----
+  if (!g3d.candLabels) g3d.candLabels = [];
+
+  // Remove extra labels if candidate count shrank
+  while (g3d.candLabels.length > K) {
+    const spr = g3d.candLabels.pop();
+    g3d.scene.remove(spr);
+    spr.material.map.dispose();
+    spr.material.dispose();
+  }
+
+  // Add missing labels
+  while (g3d.candLabels.length < K) {
+    const idx = g3d.candLabels.length;
+    const spr = makeLabelSprite('C' + idx);
+    g3d.candLabels.push(spr);
+    g3d.scene.add(spr);
+  }
+
+  // Position labels near candidates
+  for (let i = 0; i < K; i++) {
+    const spr = g3d.candLabels[i];
+    const c = result.candidates[i];
+
+    spr.position.set(c[0], c[1], c[2]);
+    spr.position.add(new THREE.Vector3(0.12, 0.12, 0.12)); // offset so it doesn't overlap the dot
+  }
+
+    g3d.controls.target.set(0,0,0);
+    g3d.controls.update();
+  }
 
 
-function draw1D(result) {
-  const w = canvas.width;
-  const h = canvas.height;
-  ctx.clearRect(0,0,w,h);
+  function draw1D(result) {
+   const w = canvas.width;
+   const h = canvas.height;
+   ctx.clearRect(0,0,w,h);
 
-  // axis
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  const y = h/2;
-  ctx.moveTo(20,y);
-  ctx.lineTo(w-20,y);
-  ctx.stroke();
+   // axis
+   ctx.strokeStyle = '#222';
+   ctx.lineWidth = 2;
+   ctx.beginPath();
+   const y = h/2;
+   ctx.moveTo(20,y);
+   ctx.lineTo(w-20,y);
+   ctx.stroke();
 
-  const dim = result.cfg.d;
-  const K = result.candidates.length;
+   const dim = result.cfg.d;
+   const K = result.candidates.length;
 
   // candidate colors
-  const colors = [];
-  for (let i=0;i<K;i++){
-    const hue = Math.floor((i*360/K) % 360);
-    colors.push(`hsl(${hue} 70% 45%)`);
+   const colors = [];
+   for (let i=0;i<K;i++){
+     const hue = Math.floor((i*360/K) % 360);
+     colors.push(`hsl(${hue} 70% 45%)`);
   }
 
   // helper to map x (-1..1) to px
@@ -816,8 +892,8 @@ Approval winner: ${result.approval.winner} (tie=${result.approval.tie}), turnout
 }
 
 function draw2D(result) {
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = document.getElementById('canvasWrap').clientWidth;
+  const h = document.getElementById('canvasWrap').clientHeight;
   ctx.clearRect(0,0,w,h);
   const dim = result.cfg.d;
   if (dim < 2) { ctx.fillStyle='#000'; ctx.fillText('2D view requires dim=2', 20,20); return; }
@@ -1041,7 +1117,7 @@ function populateFromUrl() {
 
 window.addEventListener('load', ()=> {
   populateFromUrl();
-
+  resize2DCanvas();
   // Diagnostics: helps when 3D is stuck due to missing WebGL/Three.js.
   const hasThree = (typeof THREE !== 'undefined');
   const hasWebGL = (()=> {
