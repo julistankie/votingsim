@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>VotingSim Client Demo (1D/2D)</title>
+<title>VotingSim (1D/2D/3D)</title>
 <style>
   :root{
     --gap: 16px;
@@ -23,8 +23,8 @@
 
   .grid { display:grid; grid-template-columns: 170px 1fr; gap: 10px 12px; align-items:center; }
   label { font-size: 14px; color:#222; margin: 10px;}
-  input, select { font-size: 16px; padding: 10px 10px; border:1px solid #bbb; border-radius:10px; width: 100%; box-sizing: border-box; }
-  input[type="number"] { max-width: 250px; }
+  select { font-size: 16px; padding: 10px 10px; border:1px solid #bbb; border-radius:10px; width: 100%; box-sizing: border-box; max-width: 250px;}
+  input[type="number"] { font-size: 16px; padding: 10px 10px; border:1px solid #bbb; border-radius:10px; width: 100%; box-sizing: border-box; max-width: 250px; }
 
   .buttons { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
   button { padding: 12px 14px; margin: 10px; font-size: 16px; border-radius:12px; border:2px solid #95A0A3; background:#DDECF0; cursor:pointer; }
@@ -62,9 +62,6 @@
 <div class="app">
   <div class="panel controls">
     <h3 style="margin:0 0 10px 0;">Simulation Settings</h3>
-    <div class="row">
-      <label>Change the fields below or leave as is. Press Run for visualization.</label>
-    </div>
 
     <div class="col">
       <div class="row">
