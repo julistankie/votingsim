@@ -818,8 +818,26 @@ function set3DData(result) {
 
 
   function draw1D(result) {
-   const w = canvas.width;
-   const h = canvas.height;
+   const w = document.getElementById('canvasWrap').clientWidth;
+   const h = document.getElementById('canvasWrap').clientHeight;
+
+   // Safe padding so labels never clip on small screens
+   const padTop = 18;
+   const padBottom = 46;   // room for tick labels
+   const left = 34;
+   const right = 18;
+
+   // Place axis inside the safe area (not too low)
+   const axisY = Math.round(padTop + (h - padTop - padBottom) * 0.55);
+    
+   ctx.textBaseline = 'top';
+   ctx.fillText(String(t), px, Math.min(axisY + 10, h - padBottom + 6));
+    
+   //voter jitter visual fix
+   const jitter = (Math.random() - 0.5) * 18;
+   let py = axisY + jitter;
+   py = Math.max(padTop + 6, Math.min(h - padBottom - 6, py));
+
    ctx.clearRect(0,0,w,h);
 
    // axis
@@ -886,7 +904,7 @@ function set3DData(result) {
   }
 
   // summary
-  qs('log').textContent = `Dim=${dim}, voters=${result.cfg.v}, candidates=${K}, layout=${result.cfg.l}
+  qs('log').textContent = `Dimension=${dim}, Voters=${result.cfg.v}, Candidates=${K}, Layout=${result.cfg.l}
 Plurality winner: ${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
 Approval winner: ${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
 }
@@ -897,6 +915,9 @@ function draw2D(result) {
   ctx.clearRect(0,0,w,h);
   const dim = result.cfg.d;
   if (dim < 2) { ctx.fillStyle='#000'; ctx.fillText('2D view requires dim=2', 20,20); return; }
+
+  ctx.fillStyle = 'rgba(158,197,255,0.10)'; // same vibe as 3D
+  ctx.fillRect(boxL, boxT, boxR - boxL, boxB - boxT);
 
   // map [-1,1] to margin..w-margin
   const margin = 18;
@@ -909,8 +930,48 @@ function draw2D(result) {
     const hue = Math.floor((i*360/K) % 360);
     colors.push(`hsl(${hue} 70% 45%)`);
   }
+  
+  // Axis lines for x=0 and y=0
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 2;
 
-  // voters
+  // x=0 vertical axis
+  const x0 = mapX(0);
+  ctx.beginPath();
+  ctx.moveTo(x0, boxT);
+  ctx.lineTo(x0, boxB);
+  ctx.stroke();
+
+  // y=0 horizontal axis
+  const y0 = mapY(0);
+  ctx.beginPath();
+  ctx.moveTo(boxL, y0);
+  ctx.lineTo(boxR, y0);
+  ctx.stroke();
+
+  ctx.fillStyle = '#222';
+  ctx.font = '12px Arial';
+
+  // x arrow
+  ctx.beginPath();
+  ctx.moveTo(boxR, y0);
+  ctx.lineTo(boxR - 10, y0 - 4);
+  ctx.lineTo(boxR - 10, y0 + 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillText('x', boxR - 12, y0 - 10);
+
+  // y arrow
+  ctx.beginPath();
+  ctx.moveTo(x0, boxT);
+  ctx.lineTo(x0 - 4, boxT + 10);
+  ctx.lineTo(x0 + 4, boxT + 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillText('y', x0 + 10, boxT + 14);
+  
+  
+    // voters
   for (const v of result.voters) {
     const px = mapX(v.pos[0]), py = mapY(v.pos[1]);
     const choice = v.plurality_choice;
