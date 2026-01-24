@@ -910,34 +910,38 @@ Approval winner: ${result.approval.winner} (tie=${result.approval.tie}), turnout
 }
 
 function draw2D(result) {
-  const w = document.getElementById('canvasWrap').clientWidth;
-  const h = document.getElementById('canvasWrap').clientHeight;
-  ctx.clearRect(0,0,w,h);
+  // 2D view: fixed square plotting region + light "XY plane" styling (grid + bold axes)
+  // Assumes resize2DCanvas() already ran so ctx draws in CSS pixels.
+
+  const wrap = document.getElementById('canvasWrap');
+  const w = Math.max(1, wrap.clientWidth);
+  const h = Math.max(1, wrap.clientHeight);
+  ctx.clearRect(0, 0, w, h);
+
   const dim = result.cfg.d;
-  if (dim < 2) { ctx.fillStyle='#000'; ctx.fillText('2D view requires dim=2', 20,20); return; }
+  if (dim < 2) {
+    ctx.fillStyle = '#000';
+    ctx.font = '14px Arial';
+    ctx.fillText('2D view requires dim=2', 16, 20);
+    return;
+  }
 
-  // map [-1,1] to margin..w-margin
-  const margin = 18;
+  // Plot box
+  const margin = 30;
   const boxL = margin, boxT = margin, boxR = w - margin, boxB = h - margin;
-  
-  function mapX(x){ return boxL + ((x+1)/2) * (boxR - boxL); }
-  function mapY(y){ return boxT + ((1 - (y+1)/2)) * (boxB - boxT); } // invert Y
 
-    // --- XY plane look (background + axis lines) ---
-  // Light plane fill (matches 3D vibe)
+  function mapX(x) { return boxL + ((x + 1) / 2) * (boxR - boxL); }
+  function mapY(y) { return boxT + (1 - ((y + 1) / 2)) * (boxB - boxT); } // invert Y
+
+  // ---- Background plane fill (matches the 3D vibe) ----
   ctx.fillStyle = 'rgba(158,197,255,0.10)';
   ctx.fillRect(boxL, boxT, boxR - boxL, boxB - boxT);
 
-  // Border
-  ctx.strokeStyle = '#222';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(boxL, boxT, boxR - boxL, boxB - boxT);
-
-  // Light grid
-  const gridTicks = [-1, -0.5, 0, 0.5, 1];
+  // ---- Grid ----
+  const gridTicks2D = [-1, -0.5, 0, 0.5, 1];
   ctx.strokeStyle = '#d9e6ff';
   ctx.lineWidth = 1;
-  for (const t of gridTicks) {
+  for (const t of gridTicks2D) {
     const px = mapX(t);
     const py = mapY(t);
 
@@ -945,101 +949,86 @@ function draw2D(result) {
     ctx.beginPath(); ctx.moveTo(boxL, py); ctx.lineTo(boxR, py); ctx.stroke();
   }
 
-  // Bold axes at x=0 and y=0
+  // ---- Border ----
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(boxL, boxT, boxR - boxL, boxB - boxT);
+
+  // ---- Bold axes at x=0 and y=0 ----
   const x0 = mapX(0);
   const y0 = mapY(0);
   ctx.strokeStyle = '#444';
   ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x0, boxT); ctx.lineTo(x0, boxB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(boxL, y0); ctx.lineTo(boxR, y0); ctx.stroke();
 
-  ctx.beginPath(); ctx.moveTo(x0, boxT); ctx.lineTo(x0, boxB); ctx.stroke(); // y axis
-  ctx.beginPath(); ctx.moveTo(boxL, y0); ctx.lineTo(boxR, y0); ctx.stroke(); // x axis
+  // ---- Tick labels ----
+  ctx.font = '12px Arial';
+  ctx.fillStyle = '#222';
+
+  // X labels along bottom
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (const t of gridTicks2D) ctx.fillText(String(t), mapX(t), boxB + 6);
+
+  // Y labels along left
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (const t of gridTicks2D) ctx.fillText(String(t), boxL - 6, mapY(t));
 
   // Axis labels
-  ctx.fillStyle = '#222';
-  ctx.font = '12px Arial';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'top';
   ctx.fillText('x', boxR, y0 + 6);
   ctx.textAlign = 'left';
-  ctx.fillText('y', x0 + 8, boxT);
+  ctx.fillText('y', x0 + 8, boxT - 16);
 
+  // Colors (match 1D/3D)
   const K = result.candidates.length;
   const colors = [];
-  for (let i=0;i<K;i++){
-    const hue = Math.floor((i*360/K) % 360);
+  for (let i = 0; i < K; i++) {
+    const hue = Math.floor((i * 360 / K) % 360);
     colors.push(`hsl(${hue} 70% 45%)`);
   }
-  
-  // Axis lines for x=0 and y=0
-  ctx.strokeStyle = '#444';
-  ctx.lineWidth = 2;
 
-  // x=0 vertical axis
-  const x0 = mapX(0);
-  ctx.beginPath();
-  ctx.moveTo(x0, boxT);
-  ctx.lineTo(x0, boxB);
-  ctx.stroke();
-
-  // y=0 horizontal axis
-  const y0 = mapY(0);
-  ctx.beginPath();
-  ctx.moveTo(boxL, y0);
-  ctx.lineTo(boxR, y0);
-  ctx.stroke();
-
-  ctx.fillStyle = '#222';
-  ctx.font = '12px Arial';
-
-  // x arrow
-  ctx.beginPath();
-  ctx.moveTo(boxR, y0);
-  ctx.lineTo(boxR - 10, y0 - 4);
-  ctx.lineTo(boxR - 10, y0 + 4);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillText('x', boxR - 12, y0 - 10);
-
-  // y arrow
-  ctx.beginPath();
-  ctx.moveTo(x0, boxT);
-  ctx.lineTo(x0 - 4, boxT + 10);
-  ctx.lineTo(x0 + 4, boxT + 10);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillText('y', x0 + 10, boxT + 14);
-  
-  
-    // voters
+  // ---- Voters ----
   for (const v of result.voters) {
-    const px = mapX(v.pos[0]), py = mapY(v.pos[1]);
+    const px = mapX(v.pos[0]);
+    const py = mapY(v.pos[1]);
+
     const choice = v.plurality_choice;
     ctx.beginPath();
-    ctx.fillStyle = (choice>=0) ? colors[choice] : '#888';
-    ctx.globalAlpha = 0.8;
-    ctx.arc(px, py, 2.0, 0, Math.PI*2);
+    ctx.fillStyle = (choice >= 0) ? colors[choice] : '#888';
+    ctx.globalAlpha = 0.75;
+    ctx.arc(px, py, 2.0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1.0;
   }
 
-  // candidates
-  ctx.font = '12px Arial';
+  // ---- Candidates ----
+  ctx.font = '13px Arial';
   ctx.textAlign = 'center';
-  for (let i=0;i<K;i++){
+  ctx.textBaseline = 'bottom';
+  for (let i = 0; i < K; i++) {
     const c = result.candidates[i];
-    const px = mapX(c[0]), py = mapY(c[1]);
+    const px = mapX(c[0]);
+    const py = mapY(c[1]);
+
     ctx.beginPath();
     ctx.fillStyle = colors[i];
-    ctx.arc(px, py, 6.0, 0, Math.PI*2);
+    ctx.arc(px, py, 7.0, 0, Math.PI * 2);
     ctx.fill();
+
     ctx.fillStyle = '#000';
-    ctx.fillText('C'+i, px, py-10);
+    ctx.fillText('C' + i, px, py - 10);
   }
 
-  qs('log').textContent = `2D: Dim=${dim}, voters=${result.cfg.v}, candidates=${K}
+  qs('log').textContent =
+`2D: voters=${result.cfg.v}, candidates=${K}
 Plurality winner: ${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
 Approval winner: ${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
 }
+
 
 
 // --- 3D visualization: corner axes with 3 grid planes (xyz corner) ---
