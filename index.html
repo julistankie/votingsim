@@ -816,98 +816,125 @@ function set3DData(result) {
     g3d.controls.update();
   }
 
+function draw1D(result) {
+  // 1D view: fixed axis with ticks and safe padding (mobile-friendly)
 
-  function draw1D(result) {
-   const w = document.getElementById('canvasWrap').clientWidth;
-   const h = document.getElementById('canvasWrap').clientHeight;
+  const wrap = document.getElementById('canvasWrap');
+  const w = Math.max(1, wrap.clientWidth);
+  const h = Math.max(1, wrap.clientHeight);
+  ctx.clearRect(0, 0, w, h);
 
-   // Safe padding so labels never clip on small screens
-   const padTop = 18;
-   const padBottom = 46;   // room for tick labels
-   const left = 34;
-   const right = 18;
-
-   // Place axis inside the safe area (not too low)
-   const axisY = Math.round(padTop + (h - padTop - padBottom) * 0.55);
-    
-   ctx.textBaseline = 'top';
-   ctx.fillText(String(t), px, Math.min(axisY + 10, h - padBottom + 6));
-    
-   //voter jitter visual fix
-   const jitter = (Math.random() - 0.5) * 18;
-   let py = axisY + jitter;
-   py = Math.max(padTop + 6, Math.min(h - padBottom - 6, py));
-
-   ctx.clearRect(0,0,w,h);
-
-   // axis
-   ctx.strokeStyle = '#222';
-   ctx.lineWidth = 2;
-   ctx.beginPath();
-   const y = h/2;
-   ctx.moveTo(20,y);
-   ctx.lineTo(w-20,y);
-   ctx.stroke();
-
-   const dim = result.cfg.d;
-   const K = result.candidates.length;
-
-  // candidate colors
-   const colors = [];
-   for (let i=0;i<K;i++){
-     const hue = Math.floor((i*360/K) % 360);
-     colors.push(`hsl(${hue} 70% 45%)`);
+  const dim = result.cfg.d;
+  if (dim !== 1) {
+    ctx.fillStyle = '#000';
+    ctx.font = '14px Arial';
+    ctx.fillText('1D view requires dim=1', 16, 20);
+    return;
   }
 
-  // helper to map x (-1..1) to px
+  // ---- Layout / safe padding (prevents mobile clipping) ----
+  const padTop = 20;
+  const padBottom = 48;   // room for tick labels
+  const left = 36;
+  const right = 18;
+
+  const axisY = Math.round(padTop + (h - padTop - padBottom) * 0.55);
+
   function mapX(x) {
-    return 20 + ((x + 1) / 2) * (w - 40);
+    return left + ((x + 1) / 2) * (w - left - right);
   }
 
-  // draw voters as small dots, colored by plurality choice
-  const voters = result.voters;
-  // optional jitter in y so dots don't fully overlap
-  for (const v of voters) {
-    if (dim !== 1) continue;
+  // ---- Axis line ----
+  ctx.strokeStyle = '#222';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(left, axisY);
+  ctx.lineTo(w - right, axisY);
+  ctx.stroke();
+
+  // ---- Ticks + labels ----
+  const ticks1D = [-1, -0.5, 0, 0.5, 1];
+  ctx.font = '12px Arial';
+  ctx.fillStyle = '#222';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  ctx.strokeStyle = '#444';
+  ctx.lineWidth = 1;
+
+  for (const t of ticks1D) {
+    const px = mapX(t);
+    ctx.beginPath();
+    ctx.moveTo(px, axisY - 6);
+    ctx.lineTo(px, axisY + 6);
+    ctx.stroke();
+    ctx.fillText(String(t), px, axisY + 10);
+  }
+
+  // axis label
+  ctx.fillText('x', w - right - 6, axisY + 10);
+
+  // ---- Colors ----
+  const K = result.candidates.length;
+  const colors = [];
+  for (let i = 0; i < K; i++) {
+    const hue = Math.floor((i * 360 / K) % 360);
+    colors.push(`hsl(${hue} 70% 45%)`);
+  }
+
+  // ---- Voters (jittered vertically, clamped to safe area) ----
+  const jitterMag = (h < 260) ? 10 : 18;
+
+  for (const v of result.voters) {
     const px = mapX(v.pos[0]);
-    const jitter = (Math.random()-0.5) * 18;
-    const py = y + jitter;
+    let py = axisY + (Math.random() - 0.5) * jitterMag;
+
+    // clamp so dots never leave the box
+    py = Math.max(padTop + 6, Math.min(h - padBottom - 6, py));
+
     const choice = v.plurality_choice;
     ctx.beginPath();
     ctx.fillStyle = (choice >= 0) ? colors[choice] : '#888';
     ctx.globalAlpha = 0.85;
-    ctx.arc(px, py, 2.0, 0, Math.PI*2);
+    ctx.arc(px, py, 2.0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1.0;
   }
 
-  // draw candidates as ticks + labels
-  ctx.font = '12px Arial';
+  // ---- Candidates ----
+  ctx.font = '13px Arial';
   ctx.textAlign = 'center';
-  for (let i=0;i<K;i++){
+  ctx.textBaseline = 'bottom';
+
+  for (let i = 0; i < K; i++) {
     const c = result.candidates[i];
     const px = mapX(c[0]);
+
+    // tick
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(px, y-12);
-    ctx.lineTo(px, y+12);
+    ctx.moveTo(px, axisY - 14);
+    ctx.lineTo(px, axisY + 14);
     ctx.stroke();
-    // label above
-    ctx.fillStyle = colors[i];
-    ctx.fillText('C'+i, px, y-18);
-    // marker circle
+
+    // marker
     ctx.beginPath();
     ctx.fillStyle = colors[i];
-    ctx.arc(px, y, 6, 0, Math.PI*2);
+    ctx.arc(px, axisY, 7.0, 0, Math.PI * 2);
     ctx.fill();
+
+    // label
+    ctx.fillStyle = colors[i];
+    ctx.fillText('C' + i, px, axisY - 18);
   }
 
-  // summary
-  qs('log').textContent = `Dimension=${dim}, Voters=${result.cfg.v}, Candidates=${K}, Layout=${result.cfg.l}
+  qs('log').textContent =
+`1D: voters=${result.cfg.v}, candidates=${K}
 Plurality winner: ${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
 Approval winner: ${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
 }
+
 
 function draw2D(result) {
   // 2D view: fixed square plotting region + light "XY plane" styling (grid + bold axes)
