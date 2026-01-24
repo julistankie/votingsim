@@ -936,8 +936,8 @@ function draw1D(result) {
 
   qs('log').textContent =
 `1D: voters=${result.cfg.v}, candidates=${K}
-Plurality winner: ${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
-Approval winner: ${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
+Plurality winner: C${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
+Approval winner: C${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
 }
 
 
@@ -1057,8 +1057,8 @@ function draw2D(result) {
 
   qs('log').textContent =
 `2D: voters=${result.cfg.v}, candidates=${K}
-Plurality winner: ${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
-Approval winner: ${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
+Plurality winner: C${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
+Approval winner: C${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
 }
 
 
@@ -1141,8 +1141,8 @@ const K = result.candidates.length;
   qs('log').textContent =
 `3D interactive view: drag to rotate, pinch/scroll to zoom.
 voters=${result.cfg.v}, candidates=${K}
-Plurality winner: ${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
-Approval winner: ${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
+Plurality winner: C${result.plurality.winner} (tie=${result.plurality.tie}), avg util=${result.plurality.avgUtilOverall.toFixed(4)}
+Approval winner: C${result.approval.winner} (tie=${result.approval.tie}), turnout=${result.approval.turnout}, avg util=${result.approval.avgUtilOverall.toFixed(4)}`;
 }
 
 function drawResult(result) {
