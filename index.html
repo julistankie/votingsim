@@ -134,6 +134,8 @@
   - Methods: plurality and approval (tv = min-cand-dist)
   - Outputs internal CSV for download
 */
+  
+function qs(id){ return document.getElementById(id); }
 
 function base64urlEncode(str) {
   // encode UTF-8 then base64url
@@ -428,7 +430,6 @@ function makeCsvForRun(result) {
 
 // --- UI wiring and visualization ---
 
-const qs = (id)=>document.getElementById(id);
 const canvas = qs('vis');
 const ctx = canvas.getContext('2d');
 function resize2DCanvas() {
@@ -1166,19 +1167,25 @@ function readControls() {
 }
 
 function writeShareUrl(cfg) {
+  const shareUrl = qs('shareUrl');
+  const qrEl = qs('qr');
+  if (!shareUrl || !qrEl || typeof QRious === 'undefined') return;
+
   const base = window.location.origin + window.location.pathname;
   const json = JSON.stringify({ d:cfg.d, v:cfg.v, k:cfg.k, l:cfg.l, min:cfg.min, s:cfg.s, m:cfg.m });
   const enc = base64urlEncode(json);
   const url = base + '?c=' + enc;
-  qs('shareUrl').value = url;
-  // QR update
-  const qr = new QRious({ element: qs('qr'), value: url, size:128 });
+  shareUrl.value = url;
+  new QRious({ element: qrEl, value: url, size:128 });
 }
 
-qs('encodeBtn').addEventListener('click', ()=> {
-  const cfg = readControls();
-  writeShareUrl(cfg);
-});
+const encodeBtn = qs('encodeBtn');
+if (encodeBtn) {
+  encodeBtn.addEventListener('click', ()=> {
+    const cfg = readControls();
+    writeShareUrl(cfg);
+  });
+}
 
 qs('runBtn').addEventListener('click', ()=> {
   const cfg = readControls();
