@@ -113,7 +113,7 @@
       <div id="vis3d"></div>
     </div>
     <div style="margin-top:8px;">
-      <small>Visualization: for 1D shows candidates as C0..Ck-1 and voters as dots (color = plurality winner). For 2D shows scatter.</small>
+      <small>Visualization Box</small>
     </div>
   </div>
 </div>
@@ -561,7 +561,7 @@ function set3DData(result) {
   // Plotting thousands of points in WebGL is fine, but plotting 10k+ with per-run allocations can feel slow on phones.
   // We downsample voters for rendering (simulation still uses full N) and avoid DOM/color parsing.
 
-  const MAX_RENDER_VOTERS = 4000; // adjust: 2000-6000 is a good phone-friendly range
+  const MAX_RENDER_VOTERS = 2000; // adjust: 2000-6000 is a good phone-friendly range
 
   function hslToRgb01(h, s, l) {
     // h in [0,360), s/l in [0,1] -> rgb in [0,1]
