@@ -81,7 +81,14 @@
 
       <div class="row">
         <label>Layout</label>
-        <select id="layout"><option value="control">control</option><option value="random">random</option></select>
+        <select id="layout">
+          <option value="control" selected>control (corners)</option>
+          <option value="no-edges">no edges (1D)</option>
+          <option value="diagonal">diagonal</option>
+          <option value="circle">circle (2D)</option>
+          <option value="sphere">sphere (3D)</option>
+          <option value="random">random</option>
+        </select>
       </div>
       
       <div class="row">
@@ -195,37 +202,111 @@ function addNoiseClamp(pt, dim, sigma) {
   return out;
 }
 
-// candidate generators
-function generateControl(dim,K) {
+// "control" layout:
+// - 1D: original full-span line [-1, 1]
+// - 2D: 4 corners + center
+// - 3D: 8 corners + center
+function generateControl(dim, K) {
   const c = [];
-  if (dim===1) {
-    if (K===1) return [[0,0,0]];
-    for (let i=0;i<K;i++){
-      const t = i/(K-1);
-      c.push([ -1 + 2*t, 0, 0 ]);
+
+  if (dim === 1) {
+    if (K === 1) return [[0,0,0]];
+    for (let i = 0; i < K; i++) {
+      const t = i / (K - 1);
+      c.push([ -1 + 2 * t, 0, 0 ]);
     }
     return c;
   }
-  if (dim===2) {
-    const nx = Math.ceil(Math.sqrt(K));
-    const ny = Math.ceil(K/nx);
-    const coord = (idx,n)=> n<=1 ? 0 : (-1 + 2*(idx/(n-1)));
-    for (let j=0;j<ny && c.length<K;j++){
-      for (let i=0;i<nx && c.length<K;i++){
-        c.push([ coord(i,nx), coord(j,ny), 0 ]);
-      }
-    }
+
+  if (dim === 2) {
+    const base = [
+      [-1, -1, 0],
+      [ 1, -1, 0],
+      [-1,  1, 0],
+      [ 1,  1, 0],
+      [ 0,  0, 0]
+    ];
+    for (let i = 0; i < K; i++) c.push(base[i % base.length].slice());
     return c;
   }
-  // dim 3
-  const n = Math.max(1, Math.ceil(Math.cbrt(K)));
-  const coord = (idx,n)=> n<=1 ? 0 : (-1 + 2*(idx/(n-1)));
-  for (let kk=0; kk<n && c.length<K; kk++){
-    for (let jj=0; jj<n && c.length<K; jj++){
-      for (let ii=0; ii<n && c.length<K; ii++){
-        c.push([coord(ii,n), coord(jj,n), coord(kk,n)]);
-      }
-    }
+
+  // dim === 3
+  const base3 = [
+    [-1, -1, -1],
+    [ 1, -1, -1],
+    [-1,  1, -1],
+    [ 1,  1, -1],
+    [-1, -1,  1],
+    [ 1, -1,  1],
+    [-1,  1,  1],
+    [ 1,  1,  1],
+    [ 0,  0,  0]
+  ];
+  for (let i = 0; i < K; i++) c.push(base3[i % base3.length].slice());
+  return c;
+}
+
+// 1D layout: evenly spaced but padded away from edges
+function generate1D_NoEdges(K) {
+  const c = [];
+  if (K === 1) return [[0,0,0]];
+
+  const pad = 0.15;        // adjust padding here
+  const lo = -1 + pad;
+  const hi =  1 - pad;
+
+  for (let i = 0; i < K; i++) {
+    const t = i / (K - 1);
+    c.push([ lo + (hi - lo) * t, 0, 0 ]);
+  }
+  return c;
+}
+
+// ---------- 2D layouts ----------
+function generate2D_Diagonal(K) {
+  const c = [];
+  if (K === 1) return [[0,0,0]];
+  for (let i = 0; i < K; i++) {
+    const t = i / (K - 1);
+    const v = -1 + 2 * t;
+    c.push([v, v, 0]);
+  }
+  return c;
+}
+
+function generate2D_Circle(K) {
+  const c = [];
+  const r = 0.8;
+  for (let i = 0; i < K; i++) {
+    const a = 2 * Math.PI * i / K;
+    c.push([ r * Math.cos(a), r * Math.sin(a), 0 ]);
+  }
+  return c;
+}
+
+// ---------- 3D layouts ----------
+function generate3D_Diagonal(K) {
+  const c = [];
+  if (K === 1) return [[0,0,0]];
+  for (let i = 0; i < K; i++) {
+    const t = i / (K - 1);
+    const v = -1 + 2 * t;
+    c.push([v, v, v]);
+  }
+  return c;
+}
+
+function generate3D_Sphere(K) {
+  const c = [];
+  const r = 0.85;
+  const golden = (1 + Math.sqrt(5)) / 2;
+
+  for (let i = 0; i < K; i++) {
+    const t = (i + 0.5) / K;
+    const y = 1 - 2 * t;
+    const rad = Math.sqrt(1 - y*y);
+    const a = 2 * Math.PI * i / golden;
+    c.push([ r * Math.cos(a) * rad, r * y, r * Math.sin(a) * rad ]);
   }
   return c;
 }
@@ -263,7 +344,37 @@ function runSimulation(cfg) {
   // NOTE: The browser demo is interactive. If you allow very large N*K it can feel slow.
   // You can optionally cap N here for dim=3 if desired, but we keep full N by default.
 
-  const candidates = (layout==='control') ? generateControl(dim, K) : generateRandomMinsep(dim, K, mincand);
+let candidates = null;
+
+if (layout === 'control') {
+  candidates = generateControl(dim, K);
+
+} else if (layout === 'no-edges') {
+  candidates = (dim === 1)
+    ? generate1D_NoEdges(K)
+    : generateControl(dim, K);
+
+} else if (layout === 'diagonal') {
+  candidates = (dim === 1)
+    ? generateControl(dim, K)
+    : (dim === 2 ? generate2D_Diagonal(K) : generate3D_Diagonal(K));
+
+} else if (layout === 'circle') {
+  candidates = (dim === 2)
+    ? generate2D_Circle(K)
+    : (dim === 3 ? generate3D_Sphere(K) : generateControl(dim, K));
+
+} else if (layout === 'sphere') {
+  candidates = (dim === 3)
+    ? generate3D_Sphere(K)
+    : generateControl(dim, K);
+
+} else if (layout === 'random') {
+  candidates = generateRandomMinsep(dim, K, mincand);
+
+} else {
+  candidates = generateControl(dim, K);
+}
 
   // Precompute constants
   const dmax = dmaxForDim(dim);
