@@ -21,13 +21,55 @@
   .controls { flex: 1 1 340px; min-width: 320px; max-width: 520px; }
   .viz { flex: 2 1 420px; min-width: 320px; }
 
-  .grid { display:grid; grid-template-columns: 170px 1fr; gap: 10px 12px; align-items:center; }
-  label { font-size: 14px; color:#222; margin: 10px;}
-  select { font-size: 16px; padding: 10px 10px; margin-top: 10px; border:1px solid #bbb; border-radius:10px; width: 100%; box-sizing: border-box; max-width: 250px;}
-  input[type="number"] { font-size: 16px; padding: 10px 10px; margin-top: 10px; border:1px solid #bbb; border-radius:10px; width: 100%; box-sizing: border-box; max-width: 250px; }
+ /* Clean stacked form layout */
+.controls .row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
 
-  .buttons { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-  button { padding: 12px 14px; margin: 10px; font-size: 16px; border-radius:12px; border:2px solid #95A0A3; background:#DDECF0; cursor:pointer; }
+.controls label {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.controls select,
+.controls input[type="number"] {
+  font-size: 16px;
+  padding: 12px;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.controls .row button {
+  width: 48%;
+}
+
+.controls .row:last-of-type {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+button {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 12px;
+  border: 2px solid #95A0A3;
+  background: #DDECF0;
+  cursor: pointer;
+}
   button:hover { background:#C3DCE3; }
 
   .hint { font-size: 13px; color:#5A6366; margin-top: 8px; }
